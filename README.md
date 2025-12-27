@@ -43,7 +43,7 @@ Enter the **Configure** page from the main menu.
 
 **IP and PORT**
 
-Enter the IP address and Port of your Security Spy server.
+* Enter the IP address and Port of your Security Spy server.
 
 **HTTPS mode**
 
