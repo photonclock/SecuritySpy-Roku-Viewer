@@ -81,8 +81,8 @@ Refresh Rate
 * If you have 16/32/64 cameras, I have no idea how it will perform. Let me know\!
 
 Maintain Aspect  
-Click OK to toggle the value.
 
+* Click OK to toggle the value.
 * **true** \= Camera source aspect ratio is maintained (may have black bars).  
 * **false** \= Camera image stretches to fill the tiles.
 
