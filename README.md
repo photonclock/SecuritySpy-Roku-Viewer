@@ -57,11 +57,11 @@ Enter the base64 encoded version of your username:password, as described in the 
 I recommend setting up an alternate user+password in **Security Spy \> Web \> Accounts**, with the permission type for the user limited to "View", e.g.:
 
 * User: rokutv  
-* Password: your\_password
+* Password: your_password
 
 To convert your username:password to a base64 string, you can do this in Terminal (macOS/Linux):
 
-```echo \-n "rokutv:your\_password" | base64```
+```echo \-n "rokutv:your_password" | base64```
 
 **Tip:** It is easier to use the **Roku Mobile App** on your smartphone to enter this long string.
 
@@ -73,7 +73,7 @@ To convert your username:password to a base64 string, you can do this in Termina
 **Refresh Rate**
 
 * Click OK to toggle the value.  
-* **Recommendation:** Start with refresh rate \= 1 FPS, and go up from there.  
+* Start with refresh rate \= 1 FPS, and go up from there.  
 * I've only tested this with 8 cameras.  
 * My testing suggests going no higher than **4x the number of cameras** you have, but your mileage may vary.  
 * If you have 16/32/64 cameras, I have no idea how it will perform. Let me know\!
