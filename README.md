@@ -105,6 +105,21 @@ To convert your username:password to a base64 string, you can do this in Termina
 
 * Select **Start Stream**.
 
+### **Build from source**
+
+If you clone the repo and want to create your own zip file to upload to Roku:
+
+* Select these files/folders:
+
+* * manifest
+* * source
+* * images
+* * components
+
+* Right-click the selection in the Finder and choose "Compress" to make a ZIP archive.
+* Upload the ZIP via the Roku web installer and choose "Replace with ZIP"
+* The app will be updated and relaunched with your changes
+
 ### **Notes**
 
 * If you exit the app, it remains installed on your home screen, usually at the bottom of the list of apps and channels (easiest way to navigate to it from home is to go right to channels, then up a few clicks to reach the bottom of the app list).  
