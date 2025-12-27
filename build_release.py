@@ -4,16 +4,17 @@ import os
 import zipfile
 import subprocess
 import sys
+import shutil
 
 # --- Configuration ---
 MANIFEST_PATH = "manifest"
 DIRS_TO_ZIP = ["components", "images", "source"]
 FILES_TO_ZIP = ["manifest"]
+ARCHIVE_DIR = "_builds_archive"
 # ---------------------
 
 def check_clean_git_state():
     """Aborts if there are uncommitted changes in the repo."""
-    # --porcelain gives machine-readable output. If empty, repo is clean.
     result = subprocess.run(
         ["git", "status", "--porcelain"], 
         capture_output=True, 
@@ -93,6 +94,20 @@ def create_github_release(version_str, zip_name):
     print(f"[-] Creating GitHub Release {tag}...")
     subprocess.run(cmd, check=True)
 
+def cleanup_and_archive():
+    if not os.path.exists(ARCHIVE_DIR):
+        os.makedirs(ARCHIVE_DIR)
+        print(f"[-] Created archive directory: {ARCHIVE_DIR}")
+
+    # Move all zip files starting with the project name
+    count = 0
+    for file in os.listdir('.'):
+        if file.endswith('.zip') and file.startswith("Security_Spy_Viewer_v"):
+            shutil.move(file, os.path.join(ARCHIVE_DIR, file))
+            count += 1
+            
+    print(f"[-] Archived {count} build artifact(s) to {ARCHIVE_DIR}/")
+
 def main():
     if not os.path.exists(MANIFEST_PATH):
         print(f"Error: {MANIFEST_PATH} not found.")
@@ -114,7 +129,10 @@ def main():
         # 4. Create GitHub Release
         create_github_release(version_str, zip_name)
         
-        print("\nSUCCESS: Release Published to GitHub.")
+        # 5. Archive Artifacts
+        cleanup_and_archive()
+        
+        print("\nSUCCESS: Release Published to GitHub and Archived.")
         
     except subprocess.CalledProcessError as e:
         print(f"\nFAILED: Subprocess error (Exit Code {e.returncode})")
