@@ -1,85 +1,115 @@
-# Security Spy Viewer for Roku
+# **Security Spy Viewer for Roku**
 
-## Installation Instructions (Sideloading)
+## **Installation Instructions (Sideloading)**
 
 This app is not available in the public Roku Channel Store. You must install it using Roku's Developer Mode.
 
-### Prerequisites
-* A Roku device connected to the same network as your computer.
-* The `Security_Spy_Viewer.zip` file from the [Releases page](https://github.com/photonclock/SecuritySpy-Roku-Viewer/releases/latest).
+### **Prerequisites**
 
-### Step 1: Enable Developer Mode
-1.  Turn on your Roku device and TV.
-2.  On your Roku remote, enter the following sequence rapidly:
-    * **Home** (x3)
-    * **Up** (x2)
-    * **Right**
-    * **Left**
-    * **Right**
-    * **Left**
-    * **Right**
-3.  Select **Enable installer and restart** on the screen that appears.
-4.  Review the license agreement and set a **password** for the `rokudev` user.
-5.  The Roku will reboot.
+* A Roku device connected to the same network as your computer.  
+* The Security\_Spy\_Viewer.zip file from the [Releases page](https://github.com/photonclock/SecuritySpy-Roku-Viewer/releases/latest).
 
-### Step 2: Access the Installer
-1.  Once the Roku restarts, go to **Settings > Network > About** to find the device's **IP Address**.
-2.  Open a web browser on your computer and navigate to `http://<ROKU_IP_ADDRESS>` (e.g., `http://192.168.1.50`).
-3.  Log in with the username `rokudev` and the password you created in Step 1.
+### **Step 1: Enable Developer Mode**
 
-### Step 3: Upload the Application
-1.  Click the **Upload** button in the web interface.
-2.  Select the `Security_Spy_Viewer.zip` file.
-3.  Once the file is uploaded, click **Install**.
-4.  The application will immediately launch on your TV.
+1. Turn on your Roku device and TV.  
+2. On your Roku remote, enter the following sequence rapidly:  
+   * **Home** (x3)  
+   * **Up** (x2)  
+   * **Right**  
+   * **Left**  
+   * **Right**  
+   * **Left**  
+   * **Right**  
+3. Select **Enable installer and restart** on the screen that appears.  
+4. Review the license agreement and set a **password** for the rokudev user.  
+5. The Roku will reboot.
 
-### **Instructions:** 
+### **Step 2: Access the Installer**
 
-Enter the Configure page
+1. Once the Roku restarts, go to **Settings \> Network \> About** to find the device's **IP Address**.  
+2. Open a web browser on your computer and navigate to http://\<ROKU\_IP\_ADDRESS\> (e.g., http://192.168.1.50).  
+3. Log in with the username rokudev and the password you created in Step 1\.
 
-Enter **IP** and **PORT** of your Security Spy server
+### **Step 3: Upload the Application**
 
-HTTPS mode: 
-true = https (you will need a valid and properly configured SSL certificate installed on your server)
-false = http
+1. Click the **Upload** button in the web interface.  
+2. Select the Security\_Spy\_Viewer.zip file.  
+3. Once the file is uploaded, click **Install**.  
+4. The application will immediately launch on your TV.
 
-Auth String: 
-Enter the base64 encoded version of your username:password, as described in the [Security Spy Web Server Spec](https://bensoftware.com/securityspy/web-server-spec.html)
+## **Configuration**
 
-I recommend setting up an alternate user/password in Security Spy > Web > Accounts, with the permission type for the user limited to "View", ie:
-`user: rokutv`
-`Password: your_password`
+Enter the **Configure** page from the main menu.
 
-To convert your "username:password" to a base64 string, you can do this in Terminal:
-`echo -n "rokutv:your_password" | base64`
+IP and PORT
 
-If your Roku offers the feature to scan the screen with a QR code so you can use your phone to enter the auth string text, do it. Get the auth string on your phone, copy it to the clipboard, connect to the Roku via the QR code, then paste the string. It's a lot easier than typing it in with the remote. Don't forget to include the "==" that typically occurs at the end of a base64 encoded string.
+Enter the IP address and Port of your Security Spy server.
 
-# Refresh Rate: #
-Click OK to toggle the value. 
-I've only tested this with 8 cameras. 
-I recommend setting this to no higher than 4x the number of cameras you have, but your mileage may vary. If you have 16/32/64 cameras, I have no idea how it will perform. Please let me know! Recommendation: Start with refresh rate=1, and go up from there.
+**HTTPS mode**
 
-# Maintain Aspect: #
-Click OK to toggle the value. true = camera source aspect should be maintained, false = cameras will stretch to fill tiles
+* **true** \= Use HTTPS (you will need a valid and properly configured SSL certificate installed on your Security Spy server, or a reverse proxy).  
+* **false** \= Use HTTP (your auth string will be sent in the clear \- safe-ish within a secured LAN, but unsafe via the internet).
 
-# TV Resolution: #
-Click OK to toggle the value. If you have an HD Roku TV, choose 1920. If you have a "4K" Roku TV, choose 3840. If you want to optimize bandwidth, you can choose 640 or 1280 to lower the resolution of the incoming camera streams.
+Auth String
 
-# Show debug borders: #
+Enter the base64 encoded version of your username:password, as described in the [Security Spy Web Server Spec](https://bensoftware.com/securityspy/web-server-spec.html).
+
+I recommend setting up an alternate user+password in **Security Spy \> Web \> Accounts**, with the permission type for the user limited to "View", e.g.:
+
+* User: rokutv  
+* Password: your\_password
+
+To convert your username:password to a base64 string, you can do this in Terminal (macOS/Linux):
+
+echo \-n "rokutv:your\_password" | base64
+
+**Tip:** It is easier to use the **Roku Mobile App** on your smartphone to enter this long string.
+
+1. Calculate the base64 string on your phone (or email/text it to yourself).  
+2. Copy it to your phone's clipboard.  
+3. Open the Roku Mobile App and connect to your Roku device.  
+4. Go to **Remote \> Keyboard**.  
+5. Paste the string directly into the text field on the TV.  
+   (Note: Don't forget to include the \== that typically occurs at the end of a base64 encoded string.)
+
+Refresh Rate
+
+* Click OK to toggle the value.  
+* **Recommendation:** Start with refresh rate \= 1 FPS, and go up from there.  
+* I've only tested this with 8 cameras.  
+* My testing suggests going no higher than **4x the number of cameras** you have, but your mileage may vary.  
+* If you have 16/32/64 cameras, I have no idea how it will perform. Let me know\!
+
+Maintain Aspect  
 Click OK to toggle the value.
-true = draw blue/green borders around frames as the requests are sent to Security Spy to indicate load status (use only with refresh rate = 1 or 2 FPS)
-false = off (recommended)
 
-# Select Cameras: #
-Takes you to a page where you can choose which cameras will be included.
+* **true** \= Camera source aspect ratio is maintained (may have black bars).  
+* **false** \= Camera image stretches to fill the tiles.
 
-Once cameras are chosen, choose **"Start Stream"**
+TV Resolution
 
-# Notes: #
+* Click OK to toggle the value.  
+* If you have an HD Roku TV, choose **1920**.  
+* If you have a 4K Roku TV, choose **3840**.  
+* If you want to optimize bandwidth, you can choose **640** or **1280** to request lower resolution streams from the server.
 
-If you exit the app, it remains installed on your home screen, usually at the bottom of the list of apps and channels (easiest way to navigate to it from home is to go right to channels, then up a few clicks to reach the bottom of the app list.
+Show debug borders
 
-Security Spy is the property of [bensoftware.com](https://www.bensoftware.com).
-Icons in this repo came from the Security Spy application package.
-Absolutely no warranties. Use at your own risk.
+* Click OK to toggle the value.  
+* **true** \= Draws blue/green borders around frames as requests are sent to Security Spy to indicate load status (use only with refresh rate \= 1 or 2 FPS for debugging).  
+* **false** \= Off (Recommended).
+
+Select Cameras
+
+* Takes you to a grid where you can choose which cameras will be included in the view.
+
+**Once cameras are chosen:**
+
+* Select **Start Stream**.
+
+### **Notes**
+
+* If you exit the app, it remains installed on your home screen, usually at the bottom of the list of apps and channels (easiest way to navigate to it from home is to go right to channels, then up a few clicks to reach the bottom of the app list).  
+* Security Spy is the property of [bensoftware.com](https://www.bensoftware.com).  
+* Icons in this repo came from the Security Spy application package. Hopefully Ben is cool with that.   
+* Absolutely no warranties. Use at your own risk.
