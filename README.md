@@ -41,7 +41,7 @@ This app is not available in the public Roku Channel Store. You must install it 
 
 Enter the **Configure** page from the main menu.
 
-IP and PORT
+**IP and PORT**
 
 Enter the IP address and Port of your Security Spy server.
 
@@ -61,18 +61,16 @@ I recommend setting up an alternate user+password in **Security Spy \> Web \> Ac
 
 To convert your username:password to a base64 string, you can do this in Terminal (macOS/Linux):
 
-echo \-n "rokutv:your\_password" | base64
+```echo \-n "rokutv:your\_password" | base64```
 
 **Tip:** It is easier to use the **Roku Mobile App** on your smartphone to enter this long string.
 
-1. Calculate the base64 string on your phone (or email/text it to yourself).  
-2. Copy it to your phone's clipboard.  
-3. Open the Roku Mobile App and connect to your Roku device.  
-4. Go to **Remote \> Keyboard**.  
-5. Paste the string directly into the text field on the TV.  
+1. Copy the auth string to your phone's clipboard.  
+3. Open the Roku Mobile App and connect to your Roku device or use QR code Roku may display.  
+3. Paste the string directly into the text field on the TV.  
    (Note: Don't forget to include the \== that typically occurs at the end of a base64 encoded string.)
 
-Refresh Rate
+**Refresh Rate**
 
 * Click OK to toggle the value.  
 * **Recommendation:** Start with refresh rate \= 1 FPS, and go up from there.  
@@ -80,26 +78,26 @@ Refresh Rate
 * My testing suggests going no higher than **4x the number of cameras** you have, but your mileage may vary.  
 * If you have 16/32/64 cameras, I have no idea how it will perform. Let me know\!
 
-Maintain Aspect  
+**Maintain Aspect**  
 
 * Click OK to toggle the value.
 * **true** \= Camera source aspect ratio is maintained (may have black bars).  
 * **false** \= Camera image stretches to fill the tiles.
 
-TV Resolution
+**TV Resolution**
 
 * Click OK to toggle the value.  
 * If you have an HD Roku TV, choose **1920**.  
 * If you have a 4K Roku TV, choose **3840**.  
 * If you want to optimize bandwidth, you can choose **640** or **1280** to request lower resolution streams from the server.
 
-Show debug borders
+**Show debug borders**
 
 * Click OK to toggle the value.  
-* **true** \= Draws blue/green borders around frames as requests are sent to Security Spy to indicate load status (use only with refresh rate \= 1 or 2 FPS for debugging).  
+* **true** \= Draws blue/green borders around frames as requests are sent to Security Spy and received, to indicate load status (use only with refresh rate \= 1 or 2 FPS for debugging).  
 * **false** \= Off (Recommended).
 
-Select Cameras
+**Select Cameras**
 
 * Takes you to a grid where you can choose which cameras will be included in the view.
 
