@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="CamGridItem" extends="Group">
+    <interface>
+        <field id="itemContent" type="node" onChange="showContent"/>
+        <field id="width" type="float" />
+        <field id="height" type="float" />
+    </interface>
+
+    <script type="text/brightscript">
+        <![CDATA[
+        sub init()
+            m.poster = m.top.findNode("poster")
+            m.label = m.top.findNode("label")
+            m.check = m.top.findNode("check")
+        end sub
+
+        sub showContent()
+            item = m.top.itemContent
+            if item <> invalid
+                m.poster.uri = item.HDPosterUrl
+                m.label.text = item.title
+                
+                if item.selected = true
+                    m.check.visible = true
+                else
+                    m.check.visible = false
+                end if
+            end if
+        end sub
+        ]]>
+    </script>
+
+    <children>
+        <!-- Camera Thumbnail -->
+        <Poster id="poster" width="300" height="225" loadDisplayMode="scaleToFit" />
+        
+        <!-- Checkmark Overlay -->
+        <Label id="check" text="✓" translation="[260,5]" color="0x00FF00FF" font="font:LargeBoldSystemFont" visible="false"/>
+        
+        <!-- Camera Name -->
+        <Label id="label" width="300" translation="[0,230]" horizAlign="center" font="font:SmallSystemFont" color="0xFFFFFFFF"/>
+    </children>
+</component>

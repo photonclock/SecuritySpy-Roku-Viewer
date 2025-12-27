@@ -1,0 +1,6 @@
+.DS_Store
+*.zip
+*.pkg
+out/
+build/
+*.bspwd

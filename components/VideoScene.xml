@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="VideoScene" extends="Group">
+    <interface>
+        <field id="configData" type="assocarray" />
+        <field id="active" type="boolean" onChange="onActiveChange"/>
+    </interface>
+
+    <script type="text/brightscript">
+        <![CDATA[
+        sub init()
+            m.gridContainer = m.top.findNode("gridContainer")
+            m.tiles = []
+            m.deviceInfo = CreateObject("roDeviceInfo")
+        end sub
+
+        sub onActiveChange()
+            if m.top.active
+                buildGrid()
+                setTilesActive(true)
+            else
+                setTilesActive(false)
+                cleanUp()
+            end if
+        end sub
+
+        sub buildGrid()
+            cfg = m.top.configData
+            if cfg = invalid then return
+            
+            protocol = "http"
+            if cfg.useHttps = "true" then protocol = "https"
+            baseUrl = protocol + "://" + cfg.ip + ":" + cfg.port + "/image"
+            
+            m.camIds = cfg.selectedCams
+            
+            speedFactor = cfg.refreshSpeed.toFloat()
+            if speedFactor <= 0 then speedFactor = 1.0
+            
+            m.gridContainer.removeChildren(m.gridContainer.getChildren(m.gridContainer.getChildCount(), 0))
+            m.tiles = []
+            
+            count = m.camIds.Count()
+            if count = 0 return
+            
+            ' 1. Grid Logic (Rows/Cols)
+            cols = 1
+            while cols * cols < count
+                cols = cols + 1
+            end while
+            
+            rows = 1
+            while cols * rows < count
+                rows = rows + 1
+            end while
+            
+            ' 2. UI Layout Math (Dynamic)
+            ' Detects if running in 1080p (FHD) or 4K (UHD) based on Manifest + TV
+            uiRes = m.deviceInfo.GetUIResolution()
+            screenUIW = uiRes.width
+            screenUIH = uiRes.height
+            
+            tileUIW = screenUIW / cols
+            tileUIH = screenUIH / rows
+            
+            ' 3. Network Request Math (Physical - User Configured)
+            ' This controls the resolution of the image requested from Server
+            tvRes = cfg.tvResolution.toInt()
+            if tvRes <= 0 then tvRes = 1920
+            
+            ' Aspect assumed 16:9 for calculating full request height
+            tvHeightReal = tvRes * (1080.0 / 1920.0) 
+            
+            reqW = Int(tvRes / cols)
+            reqH = Int(tvHeightReal / rows)
+            
+            for i = 0 to count - 1
+                row = Int(i / cols)
+                col = i MOD cols
+                
+                x = col * tileUIW
+                y = row * tileUIH
+                
+                tile = createObject("roSGNode", "CameraTile")
+                
+                tile.camId = m.camIds[i]
+                tile.baseUrl = baseUrl
+                tile.authString = cfg.auth
+                
+                ' Pass PHYSICAL dimensions for URL
+                tile.reqWidth = reqW
+                tile.reqHeight = reqH
+                
+                ' Pass LOGICAL dimensions for UI Layout
+                tile.tileWidth = tileUIW
+                tile.tileHeight = tileUIH
+                
+                tile.fpsTarget = speedFactor
+                tile.maintainAspect = (cfg.maintainAspect = "true")
+                tile.showBorder = (cfg.showBorders = "true")
+                
+                tile.translation = [x, y]
+                
+                m.gridContainer.appendChild(tile)
+                m.tiles.push(tile)
+            end for
+        end sub
+
+        sub setTilesActive(active)
+            for each tile in m.tiles
+                tile.active = active
+            end for
+        end sub
+        
+        sub cleanUp()
+             m.gridContainer.removeChildren(m.gridContainer.getChildren(m.gridContainer.getChildCount(), 0))
+             m.tiles = []
+        end sub
+        ]]>
+    </script>
+
+    <children>
+        <Group id="gridContainer" />
+    </children>
+</component>

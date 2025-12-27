@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="CameraTile" extends="Group">
+    <interface>
+        <!-- Logic Configuration -->
+        <field id="camId" type="string" />
+        <field id="baseUrl" type="string" />
+        <field id="authString" type="string" />
+        
+        <!-- Network Request Dimensions (Physical TV Pixels) -->
+        <field id="reqWidth" type="int" />
+        <field id="reqHeight" type="int" />
+        
+        <!-- UI Display Dimensions (Dynamic UI Pixels) -->
+        <field id="tileWidth" type="float" onChange="onSizeChange" />
+        <field id="tileHeight" type="float" onChange="onSizeChange" />
+        
+        <!-- Options -->
+        <field id="quality" type="int" value="40" />
+        <field id="fpsTarget" type="float" value="1.0" />
+        <field id="showBorder" type="boolean" value="true" />
+        <field id="maintainAspect" type="boolean" value="true" />
+        
+        <!-- Control -->
+        <field id="active" type="boolean" onChange="onActiveChange" />
+    </interface>
+
+    <script type="text/brightscript">
+        <![CDATA[
+        sub init()
+            m.posterA = m.top.findNode("posterA")
+            m.posterB = m.top.findNode("posterB")
+            m.border = m.top.findNode("border")
+            m.timer = m.top.findNode("intervalTimer")
+            
+            m.activePoster = m.posterA
+            m.inactivePoster = m.posterB
+            
+            m.isLoading = false
+            m.clock = CreateObject("roTimespan")
+            m.lastRequestTime = 0
+            
+            m.failsafeTimer = m.top.findNode("failsafeTimer")
+            m.failsafeTimer.observeField("fire", "onFailsafeFire")
+            
+            m.minFrameTimeMs = 1000
+            
+            m.posterA.observeField("loadStatus", "onLoadStatus")
+            m.posterB.observeField("loadStatus", "onLoadStatus")
+            m.timer.observeField("fire", "requestImage")
+            
+            ' Layout Observer
+            m.top.observeField("width", "onSizeChange")
+            m.top.observeField("height", "onSizeChange")
+        end sub
+        
+        sub onSizeChange()
+            ' UI LOGIC: Size items based on Roku UI Coordinates (Dynamic)
+            w = m.top.tileWidth
+            h = m.top.tileHeight
+            if w <= 0 or h <= 0 return
+            
+            ' Hardware Clipping: Keeps content inside the logical tile
+            m.top.clippingRect = {x: 0, y: 0, w: w, h: h}
+            
+            if m.border <> invalid
+                m.border.width = w
+                m.border.height = h
+            end if
+            
+            pad = 4
+            pW = w - pad
+            pH = h - pad
+            if pW < 0 then pW = 0
+            if pH < 0 then pH = 0
+            
+            trans = [pad/2, pad/2]
+            
+            ' Force Poster to Full Tile Size to enable Centering (Letterbox)
+            if m.posterA <> invalid
+                m.posterA.width = pW
+                m.posterA.height = pH
+                m.posterA.translation = trans
+            end if
+            
+            if m.posterB <> invalid
+                m.posterB.width = pW
+                m.posterB.height = pH
+                m.posterB.translation = trans
+            end if
+        end sub
+
+        sub onActiveChange()
+            if m.top.active
+                if m.top.showBorder
+                    m.border.visible = true
+                    m.border.color = "0x0000FFFF" ' Blue (Init)
+                else
+                    m.border.visible = false
+                end if
+                
+                if m.top.fpsTarget <= 0 
+                    m.minFrameTimeMs = 1000
+                else
+                    m.minFrameTimeMs = 1000.0 / m.top.fpsTarget
+                end if
+                
+                startLoop()
+            else
+                m.timer.control = "stop"
+                m.failsafeTimer.control = "stop"
+                m.isLoading = false
+            end if
+        end sub
+
+        sub startLoop()
+            m.timer.control = "stop"
+            requestImage()
+        end sub
+
+        sub requestImage()
+            if m.isLoading return
+            
+            m.isLoading = true
+            m.lastRequestTime = m.clock.TotalMilliseconds()
+            m.failsafeTimer.control = "start"
+            
+            uniqueId = m.lastRequestTime.toStr()
+            
+            ' NETWORK LOGIC: Uses Configured TV Resolution
+            url = m.top.baseUrl + "?cameraNum=" + m.top.camId + "&width=" + m.top.reqWidth.toStr()
+            
+            if not m.top.maintainAspect 
+                url = url + "&height=" + m.top.reqHeight.toStr()
+            end if
+            
+            url = url + "&quality=" + m.top.quality.toStr() + "&auth=" + m.top.authString + "&_=" + uniqueId
+            
+            m.inactivePoster.loadDisplayMode = "scaleToFit"
+            m.inactivePoster.uri = url
+            
+            if m.top.showBorder
+                 ' DEBUG BORDER: Always turn Blue when a request starts
+                 m.border.color = "0x0000FFFF" 
+            end if
+        end sub
+
+        sub onLoadStatus(msg)
+            node = msg.getRoSGNode()
+            status = msg.getData()
+            
+            if not node.isSameNode(m.inactivePoster) return 
+            
+            if status = "ready"
+                m.failsafeTimer.control = "stop"
+                m.isLoading = false
+                
+                m.inactivePoster.visible = true
+                m.activePoster.visible = false
+                
+                temp = m.activePoster
+                m.activePoster = m.inactivePoster
+                m.inactivePoster = temp
+                
+                if m.top.showBorder
+                    ' DEBUG BORDER: Turn Green on Success
+                    m.border.color = "0x00FF00FF" 
+                end if
+                
+                scheduleNextFrame()
+                
+            else if status = "failed"
+                m.failsafeTimer.control = "stop"
+                m.isLoading = false
+                
+                if m.top.showBorder
+                    ' DEBUG BORDER: Turn Red on Failure
+                    m.border.color = "0xFF0000FF" 
+                end if
+                
+                scheduleNextFrame()
+            end if
+        end sub
+        
+        sub scheduleNextFrame()
+            now = m.clock.TotalMilliseconds()
+            elapsed = now - m.lastRequestTime
+            remainingWait = m.minFrameTimeMs - elapsed
+            
+            if remainingWait <= 0
+                requestImage()
+            else
+                m.timer.duration = remainingWait / 1000.0
+                m.timer.control = "start"
+            end if
+        end sub
+        
+        sub onFailsafeFire()
+            m.isLoading = false
+            m.failsafeTimer.control = "stop"
+            if m.top.showBorder
+                m.border.color = "0xFF00FFFF" ' Magenta (Reset)
+            end if
+            requestImage()
+        end sub
+        ]]>
+    </script>
+
+    <children>
+        <Rectangle id="border" width="10" height="10" color="0x333333FF" visible="false" />
+        <Poster id="posterA" loadDisplayMode="scaleToFit" visible="true" />
+        <Poster id="posterB" loadDisplayMode="scaleToFit" visible="false" />
+        <Timer id="intervalTimer" repeat="false" />
+        <Timer id="failsafeTimer" repeat="false" duration="5.0" />
+    </children>
+</component>

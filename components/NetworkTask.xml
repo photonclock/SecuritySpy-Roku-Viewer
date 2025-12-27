@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="NetworkTask" extends="Task">
+    <interface>
+        <field id="url" type="string" />
+        <field id="response" type="assocarray" />
+    </interface>
+
+    <script type="text/brightscript">
+        <![CDATA[
+        sub init()
+            m.top.functionName = "execute"
+        end sub
+
+        sub execute()
+            url = m.top.url
+            request = CreateObject("roUrlTransfer")
+            request.SetCertificatesFile("common:/certs/ca-bundle.crt")
+            request.InitClientCertificates()
+            request.SetUrl(url)
+            
+            ' SecuritySpy JSON handling
+            jsonStr = request.GetToString()
+            
+            if jsonStr <> ""
+                json = ParseJson(jsonStr)
+                if json <> invalid
+                    m.top.response = { success: true, data: json }
+                else
+                    m.top.response = { success: false, error: "Invalid JSON" }
+                end if
+            else
+                m.top.response = { success: false, error: "Request Failed" }
+            end if
+        end sub
+        ]]>
+    </script>
+</component>
