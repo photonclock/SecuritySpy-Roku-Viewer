@@ -50,9 +50,9 @@ Enter the IP address and Port of your Security Spy server.
 * **true** \= Use HTTPS (you will need a valid and properly configured SSL certificate installed on your Security Spy server, or a reverse proxy).  
 * **false** \= Use HTTP (your auth string will be sent in the clear \- safe-ish within a secured LAN, but unsafe via the internet).
 
-Auth String
+**Auth String**
 
-Enter the base64 encoded version of your username:password, as described in the [Security Spy Web Server Spec](https://bensoftware.com/securityspy/web-server-spec.html).
+Enter the base64 encoded version of your username:password, as described in the [Security Spy Web Server Spec](https://bensoftware.com/securityspy/web-server-spec.html)
 
 I recommend setting up an alternate user+password in **Security Spy \> Web \> Accounts**, with the permission type for the user limited to "View", e.g.:
 
