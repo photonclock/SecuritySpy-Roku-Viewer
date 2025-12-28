@@ -60,7 +60,8 @@
             if w <= 0 or h <= 0 return
             
             ' Hardware Clipping: Keeps content inside the logical tile
-            m.top.clippingRect = {x: 0, y: 0, w: w, h: h}
+            ' FIX: Keys must be "width" and "height", not "w" and "h" for rect2d fields
+            m.top.clippingRect = {x: 0, y: 0, width: w, height: h}
             
             if m.border <> invalid
                 m.border.width = w
