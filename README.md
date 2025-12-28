@@ -61,7 +61,7 @@ I recommend setting up an alternate user+password in **Security Spy \> Web \> Ac
 
 To convert your username:password to a base64 string, you can do this in Terminal (macOS/Linux):
 
-```echo \-n "rokutv:your_password" | base64```
+```echo -n "rokutv:your_password" | base64```
 
 **Tip:** It is easier to use the **Roku Mobile App** on your smartphone to enter this long string.
 
