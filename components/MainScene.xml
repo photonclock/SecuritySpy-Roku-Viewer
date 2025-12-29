@@ -66,6 +66,9 @@
                 selectedCams: cams
             }
             
+            ' Store source resolutions for aspect ratio logic
+            m.camResolutions = {}
+            
             m.isAutoValidation = false
             
             print ">>> [MainScene] Registry Loaded: IP=" + m.config.ip
@@ -111,6 +114,12 @@
             ' Initial State
             print ">>> [MainScene] Checking Config Status"
             checkConfigStatus()
+            
+            ' Auto-connect on startup to populate camera metadata (resolutions)
+            if m.startButton.opacity = 1.0
+                m.isAutoValidation = true
+                testConnection()
+            end if
             
             print ">>> [MainScene] Showing Landing"
             showLanding()
@@ -183,7 +192,8 @@
                 tvResolution: m.config.tvResolution,
                 showBorders: m.config.showBorders,
                 useHttps: m.config.useHttps,
-                selectedCams: camArray
+                selectedCams: camArray,
+                camResolutions: m.camResolutions ' Pass resolution map to VideoScene
             }
             
             m.videoScene.configData = cfg
@@ -428,6 +438,7 @@
             protocol = "http"
             if m.config.useHttps = "true" then protocol = "https"
             
+            ' EXACT REVERT: Do NOT use Trim() or any modification on auth
             url = protocol + "://" + m.config.ip + ":" + m.config.port + "/systemInfo?format=json&auth=" + m.config.auth
             
             ' Log Sanitization
@@ -490,12 +501,21 @@
             ' Robust split logic instead of Instr
             selectedParts = selStr.Split(",")
             
+            ' Reset Resolutions Map
+            m.camResolutions = {}
+            
             for each cam in cams
                 item = content.createChild("ContentNode")
                 item.title = cam.name
                 item.HDPosterUrl = protocol + "://" + m.config.ip + ":" + m.config.port + "/image?cameraNum=" + cam.number.toStr() + "&width=320&height=240&quality=40&auth=" + m.config.auth
                 item.description = cam.number.toStr()
                 item.AddField("selected", "boolean", false)
+                
+                ' Store Resolution for Aspect Ratio Logic
+                ' FIX: Use correct keys "video-width" and "video-height" and BRACKET notation
+                if cam["video-width"] <> invalid and cam["video-height"] <> invalid
+                    m.camResolutions[cam.number.toStr()] = {w: cam["video-width"], h: cam["video-height"]}
+                end if
                 
                 ' Exact Match Check
                 for each p in selectedParts

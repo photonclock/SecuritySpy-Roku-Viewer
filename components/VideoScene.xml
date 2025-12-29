@@ -9,23 +9,43 @@
         <![CDATA[
         sub init()
             m.gridContainer = m.top.findNode("gridContainer")
+            m.focusTimer = m.top.findNode("focusTimer")
+            m.fullScreenTile = m.top.findNode("fullScreenTile")
+            
             m.tiles = []
             m.deviceInfo = CreateObject("roDeviceInfo")
+            
+            m.focusIndex = 0
+            m.isFocusMode = false
+            m.cols = 1
+            m.camResolutions = {}
+            
+            m.focusTimer.observeField("fire", "hideFocus")
         end sub
-
+        
         sub onActiveChange()
             if m.top.active
                 buildGrid()
                 setTilesActive(true)
+                m.isFocusMode = false
+                hideFocus()
             else
                 setTilesActive(false)
+                hideFullScreen()
                 cleanUp()
             end if
         end sub
-
+        
         sub buildGrid()
             cfg = m.top.configData
             if cfg = invalid then return
+            
+            ' Retrieve Resolution Map from Config
+            if cfg.camResolutions <> invalid
+                m.camResolutions = cfg.camResolutions
+            else
+                m.camResolutions = {}
+            end if
             
             protocol = "http"
             if cfg.useHttps = "true" then protocol = "https"
@@ -36,46 +56,39 @@
             speedFactor = cfg.refreshSpeed.toFloat()
             if speedFactor <= 0 then speedFactor = 1.0
             
-            m.gridContainer.removeChildren(m.gridContainer.getChildren(m.gridContainer.getChildCount(), 0))
+            m.gridContainer.removeChildren(m.gridContainer.getChildren(-1, 0))
             m.tiles = []
             
             count = m.camIds.Count()
             if count = 0 return
             
-            ' 1. Grid Logic (Rows/Cols)
-            cols = 1
-            while cols * cols < count
-                cols = cols + 1
+            m.cols = 1
+            while m.cols * m.cols < count
+                m.cols = m.cols + 1
             end while
             
             rows = 1
-            while cols * rows < count
+            while m.cols * rows < count
                 rows = rows + 1
             end while
             
-            ' 2. UI Layout Math (Dynamic)
-            ' Detects if running in 1080p (FHD) or 4K (UHD) based on Manifest + TV
             uiRes = m.deviceInfo.GetUIResolution()
             screenUIW = uiRes.width
             screenUIH = uiRes.height
             
-            tileUIW = screenUIW / cols
+            tileUIW = screenUIW / m.cols
             tileUIH = screenUIH / rows
             
-            ' 3. Network Request Math (Physical - User Configured)
-            ' This controls the resolution of the image requested from Server
             tvRes = cfg.tvResolution.toInt()
             if tvRes <= 0 then tvRes = 1920
+            tvHeightReal = tvRes * (1080.0 / 1920.0)
             
-            ' Aspect assumed 16:9 for calculating full request height
-            tvHeightReal = tvRes * (1080.0 / 1920.0) 
-            
-            reqW = Int(tvRes / cols)
+            reqW = Int(tvRes / m.cols)
             reqH = Int(tvHeightReal / rows)
             
             for i = 0 to count - 1
-                row = Int(i / cols)
-                col = i MOD cols
+                row = Int(i / m.cols)
+                col = i MOD m.cols
                 
                 x = col * tileUIW
                 y = row * tileUIH
@@ -86,11 +99,9 @@
                 tile.baseUrl = baseUrl
                 tile.authString = cfg.auth
                 
-                ' Pass PHYSICAL dimensions for URL
                 tile.reqWidth = reqW
                 tile.reqHeight = reqH
                 
-                ' Pass LOGICAL dimensions for UI Layout
                 tile.tileWidth = tileUIW
                 tile.tileHeight = tileUIH
                 
@@ -100,25 +111,250 @@
                 
                 tile.translation = [x, y]
                 
+                ' Create focus border for this tile and insert it as first child (behind video)
+                focusRect = CreateObject("roSGNode", "Rectangle")
+                focusRect.id = "focusBorder"
+                focusRect.color = "0xCCCCCCFF"
+                focusRect.visible = false
+                tile.insertChild(focusRect, 0)
+                
                 m.gridContainer.appendChild(tile)
                 m.tiles.push(tile)
             end for
         end sub
-
-        sub setTilesActive(active)
+        
+        sub setTilesActive(active as Boolean)
             for each tile in m.tiles
                 tile.active = active
             end for
         end sub
         
-        sub cleanUp()
-             m.gridContainer.removeChildren(m.gridContainer.getChildren(m.gridContainer.getChildCount(), 0))
-             m.tiles = []
+        sub showFocus()
+            if m.tiles.Count() = 0 return
+
+            ' Safety check: ensure index is valid
+            if m.focusIndex < 0 then m.focusIndex = 0
+            if m.focusIndex >= m.tiles.Count() then m.focusIndex = m.tiles.Count() - 1
+            
+            ' Hide all focus borders first
+            for each tile in m.tiles
+                fb = tile.findNode("focusBorder")
+                if fb <> invalid then fb.visible = false
+            end for
+            
+            selectedTile = m.tiles[m.focusIndex]
+            fb = selectedTile.findNode("focusBorder")
+            if fb <> invalid
+                pad = 8
+                fb.translation = [-pad, -pad]
+                fb.width = selectedTile.tileWidth + pad * 2
+                fb.height = selectedTile.tileHeight + pad * 2
+                fb.visible = true
+            end if
+            
+            m.focusTimer.control = "start"
+            m.isFocusMode = true
         end sub
+        
+        sub hideFocus()
+            for each tile in m.tiles
+                fb = tile.findNode("focusBorder")
+                if fb <> invalid then fb.visible = false
+            end for
+            m.isFocusMode = false
+        end sub
+        
+        sub goFullScreen()
+            if m.tiles.Count() = 0 return
+            
+            tileData = m.tiles[m.focusIndex]
+            camId = tileData.camId.toStr()
+            
+            screenSize = m.deviceInfo.GetDisplaySize()
+            fullW = screenSize.w
+            fullH = screenSize.h
+            
+            ' Aspect Ratio Logic to prevent texture overflow on tall images
+            reqW = fullW
+            reqH = 0 ' Default: Ignore height, scale by width
+            
+            if m.camResolutions[camId] <> invalid
+                src = m.camResolutions[camId]
+                
+                ' FIX: Check interface before conversion to avoid crash if already Int
+                srcW = 0
+                srcH = 0
+                
+                if src.w <> invalid
+                    if GetInterface(src.w, "ifString") <> invalid
+                        srcW = src.w.toInt()
+                    else
+                        srcW = src.w
+                    end if
+                end if
+                
+                if src.h <> invalid
+                    if GetInterface(src.h, "ifString") <> invalid
+                        srcH = src.h.toInt()
+                    else
+                        srcH = src.h
+                    end if
+                end if
+
+                if srcW > 0 and srcH > 0 and fullH > 0
+                    
+                    ' Cross Multiply to compare aspect ratios (avoids floating point issues)
+                    ' (srcW / srcH) < (fullW / fullH)  ==>  srcW * fullH < fullW * srcH
+                    
+                    val1 = srcW * fullH
+                    val2 = fullW * srcH
+                    
+                    if val1 < val2
+                        ' Source is TALLER/NARROWER than Display
+                        ' Request by HEIGHT, Ignore Width
+                        reqW = 0
+                        reqH = fullH
+                    end if
+                end if
+            end if
+            
+            m.fullScreenTile.camId = tileData.camId
+            m.fullScreenTile.baseUrl = tileData.baseUrl
+            m.fullScreenTile.authString = tileData.authString
+            
+            m.fullScreenTile.reqWidth = reqW
+            m.fullScreenTile.reqHeight = reqH
+            
+            m.fullScreenTile.tileWidth = fullW
+            m.fullScreenTile.tileHeight = fullH
+            m.fullScreenTile.maintainAspect = true
+            m.fullScreenTile.showBorder = false
+            m.fullScreenTile.fpsTarget = tileData.fpsTarget * 2
+            
+            ' Pre-load image from grid tile to prevent flash
+            if tileData <> invalid
+                fsPosterA = m.fullScreenTile.findNode("posterA")
+                fsPosterB = m.fullScreenTile.findNode("posterB")
+                
+                ' Find valid source URI from the grid tile
+                srcP = tileData.findNode("posterA")
+                if srcP <> invalid and not srcP.visible then srcP = tileData.findNode("posterB")
+
+                if srcP <> invalid and srcP.uri <> ""
+                    ' 1. Identify which poster is currently visible on the fullscreen tile
+                    activeP = fsPosterA
+                    if activeP <> invalid and not activeP.visible then activeP = fsPosterB
+                    
+                    ' 2. Identify the inactive poster
+                    inactiveP = fsPosterB
+                    if activeP.isSameNode(fsPosterB) then inactiveP = fsPosterA
+                    
+                    ' 3. Set the active poster to the current thumbnail (Instant display)
+                    if activeP <> invalid 
+                        activeP.uri = srcP.uri
+                        activeP.visible = true
+                    end if
+                    
+                    ' 4. Clear the inactive poster (Prevents old camera ghosting)
+                    if inactiveP <> invalid
+                        inactiveP.uri = ""
+                        inactiveP.visible = false
+                    end if
+                else
+                    ' Fallback: Clear both if no source image found
+                    if fsPosterA <> invalid then fsPosterA.uri = ""
+                    if fsPosterB <> invalid then fsPosterB.uri = ""
+                end if
+            end if
+            
+            ' Activate tile (Starts networking loop)
+            m.fullScreenTile.active = true
+            m.fullScreenTile.visible = true
+            
+            ' Hide the entire grid when in full screen
+            m.gridContainer.visible = false
+            
+            setTilesActive(false)
+            hideFocus()
+        end sub
+        
+        sub hideFullScreen()
+            m.fullScreenTile.visible = false
+            m.fullScreenTile.active = false
+            
+            ' Show the grid again
+            m.gridContainer.visible = true
+            
+            setTilesActive(true)
+
+            ' RESTORE FOCUS MODE
+            ' This brings back the border on the last selected tile and restarts the timer
+            showFocus()
+        end sub
+        
+        sub cleanUp()
+            m.gridContainer.removeChildren(m.gridContainer.getChildren(-1, 0))
+            m.tiles = []
+        end sub
+        
+        function onKeyEvent(key as String, press as Boolean) as Boolean
+            if not press then return false
+            
+            ' Reset inactivity timer
+            m.focusTimer.control = "start"
+            
+            if key = "OK"
+                if m.fullScreenTile.visible
+                    hideFullScreen()
+                else if m.isFocusMode
+                    goFullScreen()
+                else
+                    ' Restore focus using the LAST KNOWN index (do not reset to 0)
+                    showFocus()
+                end if
+                return true
+                
+            else if m.isFocusMode
+                if key = "back" return false
+                
+                oldIndex = m.focusIndex
+                
+                if key = "left"
+                    m.focusIndex = m.focusIndex - 1
+                    if m.focusIndex < 0 then m.focusIndex = 0
+                else if key = "right"
+                    m.focusIndex = m.focusIndex + 1
+                    if m.focusIndex >= m.tiles.Count() then m.focusIndex = m.tiles.Count() - 1
+                else if key = "up"
+                    m.focusIndex = m.focusIndex - m.cols
+                    if m.focusIndex < 0 then m.focusIndex = 0
+                else if key = "down"
+                    m.focusIndex = m.focusIndex + m.cols
+                    if m.focusIndex >= m.tiles.Count() then m.focusIndex = m.tiles.Count() - 1
+                end if
+                
+                if m.focusIndex <> oldIndex
+                    showFocus()
+                end if
+                return true
+                
+            else if key = "back" and m.fullScreenTile.visible
+                hideFullScreen()
+                return true
+            end if
+            
+            return false
+        end function
         ]]>
     </script>
 
     <children>
         <Group id="gridContainer" />
+
+        <CameraTile id="fullScreenTile"
+                    visible="false"
+                    translation="[0,0]" />
+
+        <Timer id="focusTimer" duration="7.0" repeat="false" />
     </children>
 </component>

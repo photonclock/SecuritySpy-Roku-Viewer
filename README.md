@@ -101,9 +101,18 @@ To convert your username:password to a base64 string, you can do this in Termina
 
 * Takes you to a grid where you can choose which cameras will be included in the view.
 
-**Once cameras are chosen:**
+**Once cameras have been chosen:**
 
 * Select **Start Stream**.
+
+**Fullscreen Cameras**
+
+* While viewing the camera grid, press OK.
+* A border appears on the first camera.
+* Use the remote arrow keys to navigate to any camera.
+* Press OK to fullscreen the selected camera.
+* Press OK again to exit fullscreen view.
+* The selection border will time out after several seconds and disappear.
 
 ### **Build from source**
 
@@ -122,7 +131,7 @@ If you clone the repo and want to create your own zip file to upload to Roku:
 
 ### **Notes**
 
-* If you exit the app, it remains installed on your home screen, usually at the bottom of the list of apps and channels (easiest way to navigate to it from home is to go right to channels, then up a few clicks to reach the bottom of the app list).  
+* If you exit the app, it remains installed on your home screen, usually at the bottom of the list of apps and channels (easiest way to navigate to it from home is to go right to channels, then up a few clicks to reach the bottom of the app list), or use the little "rocket" icon on the remote to set Security Spy as a shortcut.  
 * Security Spy is the property of [bensoftware.com](https://www.bensoftware.com).  
 * Icons in this repo came from the Security Spy application package. Hopefully Ben is cool with that.   
 * Absolutely no warranties. Use at your own risk.

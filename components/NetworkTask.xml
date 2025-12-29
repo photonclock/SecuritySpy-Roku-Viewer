@@ -22,14 +22,23 @@
             jsonStr = request.GetToString()
             
             if jsonStr <> ""
-                json = ParseJson(jsonStr)
-                if json <> invalid
-                    m.top.response = { success: true, data: json }
+                ' Sanity check: Ensure response looks like JSON before parsing to prevent crash on HTML (e.g. Login Page)
+                firstChar = Left(jsonStr.Trim(), 1)
+                
+                if firstChar = "{" or firstChar = "["
+                    json = ParseJson(jsonStr)
+                    if json <> invalid
+                        m.top.response = { success: true, data: json }
+                    else
+                        m.top.response = { success: false, error: "Invalid JSON Structure" }
+                    end if
                 else
-                    m.top.response = { success: false, error: "Invalid JSON" }
+                    ' Debug: Print the first 100 chars to see what HTML we got
+                    print ">>> [NetworkTask] Server returned non-JSON: " + Left(jsonStr, 100)
+                    m.top.response = { success: false, error: "Server returned HTML (Check Auth)" }
                 end if
             else
-                m.top.response = { success: false, error: "Request Failed" }
+                m.top.response = { success: false, error: "Request Failed (Empty Response)" }
             end if
         end sub
         ]]>

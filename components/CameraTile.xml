@@ -128,9 +128,30 @@
             uniqueId = m.lastRequestTime.toStr()
             
             ' NETWORK LOGIC: Uses Configured TV Resolution
-            url = m.top.baseUrl + "?cameraNum=" + m.top.camId + "&width=" + m.top.reqWidth.toStr()
+            url = m.top.baseUrl + "?cameraNum=" + m.top.camId
             
-            if not m.top.maintainAspect 
+            if m.top.reqWidth > 0
+                url = url + "&width=" + m.top.reqWidth.toStr()
+            end if
+            
+            ' Aspect Ratio / Height Logic
+            ' If reqHeight is set:
+            ' 1. If maintainAspect is FALSE, we always send height (distort mode)
+            ' 2. If reqWidth is 0 (Explicit Height Only Request), we send height.
+            ' 3. If reqWidth > 0 AND maintainAspect is true, we usually skip height to let width drive scaling,
+            '    UNLESS specifically required. Standard behavior for Grid is Width only.
+            
+            shouldSendHeight = false
+            
+            if m.top.reqHeight > 0
+                if not m.top.maintainAspect
+                    shouldSendHeight = true
+                else if m.top.reqWidth <= 0
+                    shouldSendHeight = true
+                end if
+            end if
+            
+            if shouldSendHeight
                 url = url + "&height=" + m.top.reqHeight.toStr()
             end if
             
